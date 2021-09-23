@@ -8,16 +8,14 @@ module.exports = {
   // to customize your Truffle configuration!
   contracts_build_directory: path.join(__dirname, "client/src/contracts"),
   networks: {
-    development: {
+    develop: {
       port: 7545,
-      host: "127.0.0.1",
-      network_id: 5777,
     },
     ganache_local: {
       provider: function () {
         return new HDWalletProvider(
           process.env.MNEMONIC,
-          "http://127.0.0.1:7545",
+          "http://localhost:7545",
           AccountIndex
         );
       },
@@ -46,7 +44,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.8.1",
+      version: "^0.8.0",
     },
   },
 };
