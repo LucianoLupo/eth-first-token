@@ -1,73 +1,265 @@
-import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+// import React, { Component, useEffect, useState } from "react";
+// import MyToken from "./contracts/MyToken.json";
+// import MyTokenSale from "./contracts/MyTokenSale.json";
+// import KycContract from "./contracts/KycContract.json";
+// import getWeb3 from "./getWeb3";
+
+// import "./App.css";
+
+// const App = (props) => {
+//   const [state, setState] = useState({
+//     storageValue: 0,
+//     web3: null,
+//     accounts: null,
+//     contract: null,
+//   });
+
+//   const updateUserTokens = async () => {
+//     let userTokens = await state.tokenInstance.methods
+//       .balanceOf(state.accounts[0])
+//       .call();
+//     setState({ ...state, userTokens: userTokens });
+//   };
+
+//   const listenToTokenTransfer = () => {
+//     state.tokenInstance.events
+//       .Transfer({ to: state.accounts[0] })
+//       .on("data", updateUserTokens);
+//   };
+
+//   const handleBuyTokens = async () => {
+//     await state.tokenSaleInstance.methods.buyTokens(state.accounts[0]).send({
+//       from: state.accounts[0],
+//       value: state.web3.utils.toWei("1", "wei"),
+//     });
+//   };
+
+//   const handleInputChange = (event) => {
+//     const target = event.target;
+//     const value = target.type === "checkbox" ? target.checked : target.value;
+//     const name = target.name;
+//     setState({ ...state, [name]: value });
+//   };
+
+//   const handleKycWhitelisting = async () => {
+//     await state.kycInstance.methods
+//       .setKycCompleted(state.kycAddress)
+//       .send({ from: state.accounts[0] });
+//     alert("KYC for " + state.kycAddress + " is completed");
+//   };
+
+//   useEffect(() => {
+//     const asyncFun = async () => {
+//       try {
+//         // Get network provider and web3 instance.
+//         const web3 = await getWeb3();
+
+//         // Use web3 to get the user's accounts.
+//         const accounts = await web3.eth.getAccounts();
+
+//         // Get the contract instance.
+//         const networkId = await web3.eth.net.getId();
+
+//         const tokenInstance = new web3.eth.Contract(
+//           MyToken.abi,
+//           MyToken.networks[networkId] && MyToken.networks[networkId].address
+//         );
+
+//         const tokenSaleInstance = new web3.eth.Contract(
+//           MyTokenSale.abi,
+//           MyTokenSale.networks[networkId] &&
+//             MyTokenSale.networks[networkId].address
+//         );
+//         const kycInstance = new web3.eth.Contract(
+//           KycContract.abi,
+//           KycContract.networks[networkId] &&
+//             KycContract.networks[networkId].address
+//         );
+
+//         // Set web3, accounts, and contract to the state, and then proceed with an
+//         // example of interacting with the contract's methods.
+
+//         setState(
+//           {
+//             ...state,
+//             loaded: true,
+//             tokenSaleAddress: MyTokenSale.networks[networkId].address,
+//             accounts,
+//             tokenInstance,
+//             tokenSaleInstance,
+//             kycInstance,
+//             web3,
+//           },
+//           updateUserTokens
+//         );
+//       } catch (error) {
+//         // Catch any errors for any of the above operations.
+//         alert(
+//           `Failed to load web3, accounts, or contract. Check console for details.`
+//         );
+//         console.error(error);
+//       }
+//     };
+//     asyncFun();
+//   }, []);
+
+//   useEffect(() => {
+//     if (state.tokenInstance && state.tokenInstance.events)
+//       listenToTokenTransfer();
+//   }, [state]);
+
+//   if (!state.web3) {
+//     return <div>Loading Web3, accounts, and contract...</div>;
+//   }
+//   return (
+//     <div className="App">
+//       <h1>StarDucks Cappucino Token Sale</h1>
+//       <p>Get your Tokens today!</p>
+//       <h2>Kyc Whitelisting</h2>
+//       Address to allow:{" "}
+//       <input
+//         type="text"
+//         name="kycAddress"
+//         value={state.kycAddress}
+//         onChange={handleInputChange}
+//       />
+//       <button type="button" onClick={handleKycWhitelisting}>
+//         Add to Whitelist
+//       </button>
+//       <h2>Buy Tokens</h2>
+//       <p>
+//         If you want to buy tokens, send Wei to this address:{" "}
+//         {state.tokenSaleAddress}
+//       </p>
+//       <p>You currently have: {state.userTokens} CAPPU Tokens</p>
+//       <button type="button" onClick={handleBuyTokens}>
+//         Buy more tokens
+//       </button>
+//     </div>
+//   );
+// };
+
+// export default App;
+
+import React, { Component, useEffect, useState } from "react";
+import MyToken from "./contracts/MyToken.json";
+import MyTokenSale from "./contracts/MyTokenSale.json";
+import KycContract from "./contracts/KycContract.json";
 import getWeb3 from "./getWeb3";
 
 import "./App.css";
 
-class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+const App = (props) => {
+  const [state, setState] = useState({
+    storageValue: 0,
+    web3: null,
+    accounts: null,
+    contract: null,
+  });
 
-  componentDidMount = async () => {
-    try {
-      // Get network provider and web3 instance.
-      const web3 = await getWeb3();
+  const [tokenInstance, setTokenInstance] = useState();
+  const [accounts, setAccounts] = useState();
 
-      // Use web3 to get the user's accounts.
-      const accounts = await web3.eth.getAccounts();
-
-      // Get the contract instance.
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
-      const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
-        deployedNetwork && deployedNetwork.address,
-      );
-
-      // Set web3, accounts, and contract to the state, and then proceed with an
-      // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance }, this.runExample);
-    } catch (error) {
-      // Catch any errors for any of the above operations.
-      alert(
-        `Failed to load web3, accounts, or contract. Check console for details.`,
-      );
-      console.error(error);
-    }
+  const handleBuyTokens = async () => {
+    console.log("handleBuyTokens");
   };
 
-  runExample = async () => {
-    const { accounts, contract } = this.state;
-
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
-
-    // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
-
-    // Update state with the result.
-    this.setState({ storageValue: response });
+  const handleInputChange = (event) => {
+    console.log("handleInputChange");
   };
 
-  render() {
-    if (!this.state.web3) {
-      return <div>Loading Web3, accounts, and contract...</div>;
-    }
-    return (
-      <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
-      </div>
-    );
-  }
-}
+  const handleKycWhitelisting = async () => {
+    console.log("handleKycWhitelisting");
+  };
+
+  const updateUserTokens = async () => {
+    console.log(tokenInstance);
+    let userTokens = await tokenInstance.methods.balanceOf(accounts[0]).call();
+    //setState({ ...state, userTokens: userTokens });
+  };
+
+  useEffect(() => {
+    const asyncFun = async () => {
+      try {
+        // Get network provider and web3 instance.
+        const web3 = await getWeb3();
+
+        // Use web3 to get the user's accounts.
+        const accounts = await web3.eth.getAccounts();
+        // Get the contract instance.
+        const networkId = await web3.eth.net.getId();
+
+        console.log(networkId, MyToken);
+        const theTokenInstance = new web3.eth.Contract(
+          MyToken.abi,
+          MyToken.networks[networkId] && MyToken.networks[networkId].address
+        );
+
+        const tokenSaleInstance = new web3.eth.Contract(
+          MyTokenSale.abi,
+          MyTokenSale.networks[networkId] &&
+            MyTokenSale.networks[networkId].address
+        );
+        const kycInstance = new web3.eth.Contract(
+          KycContract.abi,
+          KycContract.networks[networkId] &&
+            KycContract.networks[networkId].address
+        );
+
+        // Set web3, accounts, and contract to the state, and then proceed with an
+        // example of interacting with the contract's methods.
+        console.log("===>", MyTokenSale.networks[networkId]);
+        setAccounts(accounts);
+        setTokenInstance(theTokenInstance);
+        setState({
+          ...state,
+          loaded: true,
+          accounts,
+          tokenSaleInstance,
+          kycInstance,
+          web3,
+        });
+      } catch (error) {
+        // Catch any errors for any of the above operations.
+        alert(
+          `Failed to load web3, accounts, or contract. Check console for details.`
+        );
+        console.error(error);
+      }
+    };
+    asyncFun();
+  }, []);
+
+  useEffect(() => {
+    if (tokenInstance && accounts) updateUserTokens();
+  }, [tokenInstance, accounts]);
+
+  return (
+    <div className="App">
+      <h1>RANDOMCOIN</h1>
+      <p>Get your Tokens today!</p>
+      <h2>Kyc Whitelisting</h2>
+      Address to allow:
+      <input
+        type="text"
+        name="kycAddress"
+        value={state.kycAddress}
+        onChange={handleInputChange}
+      />
+      <button type="button" onClick={handleKycWhitelisting}>
+        Add to Whitelist
+      </button>
+      <h2>Buy Tokens</h2>
+      <p>
+        If you want to buy tokens, send Wei to this address:
+        {state.tokenSaleAddress}
+      </p>
+      <p>You currently have: {state.userTokens} RND Tokens</p>
+      <button type="button" onClick={handleBuyTokens}>
+        Buy more tokens
+      </button>
+    </div>
+  );
+};
 
 export default App;
