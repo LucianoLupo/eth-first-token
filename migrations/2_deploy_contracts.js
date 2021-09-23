@@ -3,8 +3,9 @@ var MyTokenSale = artifacts.require("MyTokenSale");
 var MyKycContract = artifacts.require("KycContract");
 require("dotenv").config({ path: "../.env" });
 
-export default async function (deployer) {
+module.exports = async function (deployer) {
   let addr = await web3.eth.getAccounts();
+  console.log("addr: " + addr);
   await deployer.deploy(MyToken, process.env.INITIAL_TOKENS);
   const myToken = await MyToken.deployed();
 
@@ -20,10 +21,8 @@ export default async function (deployer) {
   );
   const myTokenSale = await MyTokenSale.deployed();
 
-  const myToken = await MyToken.deployed();
-
   await myToken.transfer(myTokenSale.address, process.env.INITIAL_TOKENS);
-}
+};
 
 // export default function (deployer) {
 //   web3.eth.getAccounts().then((addr) => {

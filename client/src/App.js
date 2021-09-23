@@ -158,10 +158,15 @@ const App = (props) => {
   });
 
   const [tokenInstance, setTokenInstance] = useState();
+
   const [accounts, setAccounts] = useState();
 
   const handleBuyTokens = async () => {
     console.log("handleBuyTokens");
+    await state.tokenSaleInstance.methods.buyTokens(state.accounts[0]).send({
+      from: state.accounts[0],
+      value: state.web3.utils.toWei("1", "wei"),
+    });
   };
 
   const handleInputChange = (event) => {
@@ -170,12 +175,16 @@ const App = (props) => {
 
   const handleKycWhitelisting = async () => {
     console.log("handleKycWhitelisting");
+    await state.kycInstance.methods
+      .setKycCompleted(state.kycAddress)
+      .send({ from: state.accounts[0] });
+    alert("KYC for " + state.kycAddress + " is completed");
   };
 
   const updateUserTokens = async () => {
     console.log(tokenInstance);
     let userTokens = await tokenInstance.methods.balanceOf(accounts[0]).call();
-    //setState({ ...state, userTokens: userTokens });
+    setState((prevState) => ({ ...prevState, userTokens: userTokens }));
   };
 
   useEffect(() => {
@@ -208,7 +217,9 @@ const App = (props) => {
 
         // Set web3, accounts, and contract to the state, and then proceed with an
         // example of interacting with the contract's methods.
-        console.log("===>", MyTokenSale.networks[networkId]);
+        console.log("===>", MyTokenSale.networks[networkId].address);
+        const tokenSaleAddress = MyTokenSale.networks[networkId].address;
+
         setAccounts(accounts);
         setTokenInstance(theTokenInstance);
         setState({
@@ -217,6 +228,7 @@ const App = (props) => {
           accounts,
           tokenSaleInstance,
           kycInstance,
+          tokenSaleAddress,
           web3,
         });
       } catch (error) {
